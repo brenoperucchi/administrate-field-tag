@@ -32,7 +32,7 @@ module Administrate
         end
       end
 
-      def self.permitted_attribute(attribute)
+      def self.permitted_attribute(attribute, options=nil)
         { "#{attribute.to_s.singularize}_ids".to_sym => [] }
       end
 
@@ -41,11 +41,13 @@ module Administrate
       end
 
       def associated_resource_options
-        associated_class.all.map { |resource| resource.send(attribute_name) }
+        associated_class.all.map { |resource| resource.send(attribute_name) }.flatten
       end
 
       def selected_options
-        data && data.map { |object| object.send(attribute_name) }
+        # data #&& data.map { |object| object.send(attribute_name) }
+        data.map(&:to_s)
+
       end
 
       def permitted_attribute

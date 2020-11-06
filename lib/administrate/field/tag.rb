@@ -33,7 +33,7 @@ module Administrate
       end
 
       def self.permitted_attribute(attribute, options=nil)
-        { "#{attribute.to_s.singularize}_ids".to_sym => [] }
+        { "#{attribute.to_s.singularize}".to_sym => [] }
       end
 
       def attribute_key

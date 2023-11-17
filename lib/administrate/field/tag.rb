@@ -13,16 +13,17 @@ module Administrate
           app.config.assets.precompile += %w( administrate-field-tag/application.js )
           Administrate::Engine.add_javascript 'administrate-field-tag/application'
 
+          return 
           Administrate::ApplicationController.before_action({ only: [:create, :update]}) do
             dashboard.form_attributes.each do |name|
               attribute_type = dashboard.attribute_type_for(name)
               if attribute_type == Administrate::Field::Tag
-                tags = params[resource_name].delete(name).reject(&:blank?)
+                tags = params[resource_name].delete(name).try(:reject, &:blank?)
                 params[resource_name]["#{name.to_s.singularize}_ids"] = tags.map do |tag|
                   Tag.find_or_create_by(name: tag.humanize).id
                 end
               elsif attribute_type.is_a?(Administrate::Field::Deferred) and attribute_type.deferred_class == Administrate::Field::Tag
-                tags = params[resource_name].delete(name).reject(&:blank?)
+                tags = params[resource_name].delete(name).try(:reject, &:blank?)
                 params[resource_name]["#{name.to_s.singularize}_ids"] = tags.map do |tag|
                   attribute_type.options.fetch(:class_name, "Tag").constantize.find_or_create_by(attribute_type.options.fetch(:attribute_name, :name) => tag.humanize).id
                 end

@@ -13,21 +13,25 @@ module Administrate
           app.config.assets.precompile += %w( administrate-field-tag/application.js )
           Administrate::Engine.add_javascript 'administrate-field-tag/application'
 
-          Administrate::ApplicationController.before_action({ only: [:create, :update]}) do
-            dashboard.form_attributes.each do |name|
-              attribute_type = dashboard.attribute_type_for(name)
-              if attribute_type == Administrate::Field::Tag
-                tags = params[resource_name].delete(name).try(:reject, &:blank?)
-                unless tags.blank?
-                  params[resource_name]["#{name.to_s.singularize}_ids"] = tags.map do |tag|
-                    Tag.find_or_create_by(name: tag.humanize).id
+          # Controllers are reloadable: Rails 7 forbids touching them while
+          # initializers run, and to_prepare re-applies the hook after each reload.
+          app.config.to_prepare do
+            Administrate::ApplicationController.before_action({ only: [:create, :update]}) do
+              dashboard.form_attributes.each do |name|
+                attribute_type = dashboard.attribute_type_for(name)
+                if attribute_type == Administrate::Field::Tag
+                  tags = params[resource_name].delete(name).try(:reject, &:blank?)
+                  unless tags.blank?
+                    params[resource_name]["#{name.to_s.singularize}_ids"] = tags.map do |tag|
+                      Tag.find_or_create_by(name: tag.humanize).id
+                    end
                   end
-                end
-              elsif attribute_type.is_a?(Administrate::Field::Deferred) and attribute_type.deferred_class == Administrate::Field::Tag
-                tags = params[resource_name].delete(name).try(:reject, &:blank?)
-                unless tags.blank?
-                  params[resource_name]["#{name.to_s.singularize}_ids"] = tags.map do |tag|
-                    attribute_type.options.fetch(:class_name, "Tag").constantize.find_or_create_by(attribute_type.options.fetch(:attribute_name, :name) => tag.humanize).id
+                elsif attribute_type.is_a?(Administrate::Field::Deferred) and attribute_type.deferred_class == Administrate::Field::Tag
+                  tags = params[resource_name].delete(name).try(:reject, &:blank?)
+                  unless tags.blank?
+                    params[resource_name]["#{name.to_s.singularize}_ids"] = tags.map do |tag|
+                      attribute_type.options.fetch(:class_name, "Tag").constantize.find_or_create_by(attribute_type.options.fetch(:attribute_name, :name) => tag.humanize).id
+                    end
                   end
                 end
               end
